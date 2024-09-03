@@ -13,108 +13,106 @@ module.exports = {
     node.outstandingTimers = [];
     node.outstandingIntervals = [];
 
-    /* istanbul ignore next */
-    const sandbox = {
-      node,
-      coreServer,
-      sandboxNodeContext: {
-        set: new ivm.Reference(function () {
-          return node.context().set.apply(node, arguments);
-        }),
-        get: new ivm.Reference(function () {
-          return node.context().get.apply(node, arguments);
-        }),
-        keys: new ivm.Reference(function () {
-          return node.context().keys.apply(node, arguments);
-        }),
-        global: node.context().global,
-        flow: node.context().flow,
-      },
-      sandboxFlowContext: {
-        set: new ivm.Reference(function () {
-          return node.context().flow.set.apply(node, arguments);
-        }),
-        get: new ivm.Reference(function () {
-          return node.context().flow.get.apply(node, arguments);
-        }),
-        keys: new ivm.Reference(function () {
-          return node.context().flow.keys.apply(node, arguments);
-        }),
-      },
-      sandboxGlobalContext: {
-        set: new ivm.Reference(function () {
-          return node.context().global.set.apply(node, arguments);
-        }),
-        get: new ivm.Reference(function () {
-          return node.context().global.get.apply(node, arguments);
-        }),
-        keys: new ivm.Reference(function () {
-          return node.context().global.keys.apply(node, arguments);
-        }),
-      },
-      sandboxEnv: {
-        get: new ivm.Reference(function (envVar) {
-          const flow = node._flow;
-          return flow.getSetting(envVar);
-        }),
-      },
-      setTimeout: new ivm.Reference(function () {
-        const func = arguments[0];
-        const timerId = setTimeout.apply(this, arguments);
-        arguments[0] = function () {
-          sandbox.clearTimeout(timerId);
-          try {
-            func.apply(this, arguments);
-          } catch (err) {
-            node.error(err, {});
-          }
-        };
-        node.outstandingTimers.push(timerId);
-        return timerId;
-      }),
-      clearTimeout: new ivm.Reference(function (id) {
-        clearTimeout(id);
-        const index = node.outstandingTimers.indexOf(id);
-        if (index > -1) {
-          node.outstandingTimers.splice(index, 1);
-        }
-      }),
-      setInterval: new ivm.Reference(function () {
-        const func = arguments[0];
-        const timerId = setInterval.apply(this, arguments);
-        arguments[0] = function () {
-          try {
-            func.apply(this, arguments);
-          } catch (err) {
-            node.error(err, {});
-          }
-        };
-        node.outstandingIntervals.push(timerId);
-        return timerId;
-      }),
-      clearInterval: new ivm.Reference(function (id) {
-        clearInterval(id);
-        const index = node.outstandingIntervals.indexOf(id);
-        if (index > -1) {
-          node.outstandingIntervals.splice(index, 1);
-        }
-      }),
-    };
+    // Create an isolate
+    const isolate = new ivm.Isolate({ memoryLimit: 128 });
 
-    // Step 1: Create an isolate
-    const isolate = new ivm.Isolate({ memoryLimit: 128 }); // Memory limit in MB
-
-    // Step 2: Create a new context within the isolate
+    // Create a new context within the isolate
     const context = await isolate.createContext();
 
-    // Step 3: Set up the global context
+    // Get the global object within the context
     const jail = context.global;
     await jail.set("global", jail.derefInto());
 
-    // Step 4: Inject the sandbox object into the context (only the parts that can be passed)
-    await jail.set("sandbox", sandbox);
+    // Define individual components of the sandbox
+    await jail.set("node", new ivm.ExternalCopy(node).copyInto());
+    await jail.set("coreServer", new ivm.ExternalCopy(coreServer).copyInto());
 
-    // Step 5: Inject required modules
+    // Set up the context objects, passing only necessary methods and properties
+    await jail.set("sandboxNodeContext", {
+      set: new ivm.Reference(function () {
+        return node.context().set.apply(node, arguments);
+      }),
+      get: new ivm.Reference(function () {
+        return node.context().get.apply(node, arguments);
+      }),
+      keys: new ivm.Reference(function () {
+        return node.context().keys.apply(node, arguments);
+      }),
+    });
+
+    await jail.set("sandboxFlowContext", {
+      set: new ivm.Reference(function () {
+        return node.context().flow.set.apply(node, arguments);
+      }),
+      get: new ivm.Reference(function () {
+        return node.context().flow.get.apply(node, arguments);
+      }),
+      keys: new ivm.Reference(function () {
+        return node.context().flow.keys.apply(node, arguments);
+      }),
+    });
+
+    await jail.set("sandboxGlobalContext", {
+      set: new ivm.Reference(function () {
+        return node.context().global.set.apply(node, arguments);
+      }),
+      get: new ivm.Reference(function () {
+        return node.context().global.get.apply(node, arguments);
+      }),
+      keys: new ivm.Reference(function () {
+        return node.context().global.keys.apply(node, arguments);
+      }),
+    });
+
+    await jail.set("sandboxEnv", {
+      get: new ivm.Reference(function (envVar) {
+        const flow = node._flow;
+        return flow.getSetting(envVar);
+      }),
+    });
+
+    // Set timeout and interval functions
+    await jail.set("setTimeout", new ivm.Reference(function (func, delay) {
+      const timerId = setTimeout(() => {
+        try {
+          func.apply(this);
+        } catch (err) {
+          node.error(err, {});
+        }
+      }, delay);
+      node.outstandingTimers.push(timerId);
+      return timerId;
+    }));
+
+    await jail.set("clearTimeout", new ivm.Reference(function (id) {
+      clearTimeout(id);
+      const index = node.outstandingTimers.indexOf(id);
+      if (index > -1) {
+        node.outstandingTimers.splice(index, 1);
+      }
+    }));
+
+    await jail.set("setInterval", new ivm.Reference(function (func, delay) {
+      const timerId = setInterval(() => {
+        try {
+          func.apply(this);
+        } catch (err) {
+          node.error(err, {});
+        }
+      }, delay);
+      node.outstandingIntervals.push(timerId);
+      return timerId;
+    }));
+
+    await jail.set("clearInterval", new ivm.Reference(function (id) {
+      clearInterval(id);
+      const index = node.outstandingIntervals.indexOf(id);
+      if (index > -1) {
+        node.outstandingIntervals.splice(index, 1);
+      }
+    }));
+
+    // Injecting required modules
     await jail.set("require", new ivm.Reference((module) => {
       if (module === "fs") {
         return require("fs");
@@ -129,7 +127,7 @@ module.exports = {
       }
     }));
 
-    // Step 6: Execute the done function with the isolate and context
+    // Execute the done function with the isolate and context
     done(node, { isolate, context });
   },
 };
