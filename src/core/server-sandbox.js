@@ -18,51 +18,47 @@ module.exports = {
       node,
       coreServer,
       sandboxNodeContext: {
-        set: function () {
-          node.context().set.apply(node, arguments);
-        },
-        get: function () {
+        set: new ivm.Reference(function () {
+          return node.context().set.apply(node, arguments);
+        }),
+        get: new ivm.Reference(function () {
           return node.context().get.apply(node, arguments);
-        },
-        keys: function () {
+        }),
+        keys: new ivm.Reference(function () {
           return node.context().keys.apply(node, arguments);
-        },
-        get global() {
-          return node.context().global;
-        },
-        get flow() {
-          return node.context().flow;
-        },
+        }),
+        global: node.context().global,
+        flow: node.context().flow,
       },
       sandboxFlowContext: {
-        set: function () {
-          node.context().flow.set.apply(node, arguments);
-        },
-        get: function () {
+        set: new ivm.Reference(function () {
+          return node.context().flow.set.apply(node, arguments);
+        }),
+        get: new ivm.Reference(function () {
           return node.context().flow.get.apply(node, arguments);
-        },
-        keys: function () {
+        }),
+        keys: new ivm.Reference(function () {
           return node.context().flow.keys.apply(node, arguments);
-        },
+        }),
       },
       sandboxGlobalContext: {
-        set: function () {
-          node.context().global.set.apply(node, arguments);
-        },
-        get: function () {
+        set: new ivm.Reference(function () {
+          return node.context().global.set.apply(node, arguments);
+        }),
+        get: new ivm.Reference(function () {
           return node.context().global.get.apply(node, arguments);
-        },
-        keys: function () {
+        }),
+        keys: new ivm.Reference(function () {
           return node.context().global.keys.apply(node, arguments);
-        },
+        }),
       },
       sandboxEnv: {
-        get: function (envVar) {
+        get: new ivm.Reference(function (envVar) {
           const flow = node._flow;
           return flow.getSetting(envVar);
-        },
+        }),
       },
-      setTimeout: function () {
+      setTimeout: new ivm.Reference(function () {
         const func = arguments[0];
         const timerId = setTimeout.apply(this, arguments);
         arguments[0] = function () {
@@ -75,15 +71,15 @@ module.exports = {
         };
         node.outstandingTimers.push(timerId);
         return timerId;
-      },
-      clearTimeout: function (id) {
+      }),
+      clearTimeout: new ivm.Reference(function (id) {
         clearTimeout(id);
         const index = node.outstandingTimers.indexOf(id);
         if (index > -1) {
           node.outstandingTimers.splice(index, 1);
         }
-      },
-      setInterval: function () {
+      }),
+      setInterval: new ivm.Reference(function () {
         const func = arguments[0];
         const timerId = setInterval.apply(this, arguments);
         arguments[0] = function () {
@@ -95,14 +91,14 @@ module.exports = {
         };
         node.outstandingIntervals.push(timerId);
         return timerId;
-      },
-      clearInterval: function (id) {
+      }),
+      clearInterval: new ivm.Reference(function (id) {
         clearInterval(id);
         const index = node.outstandingIntervals.indexOf(id);
         if (index > -1) {
           node.outstandingIntervals.splice(index, 1);
         }
-      },
+      }),
     };
 
     // Step 1: Create an isolate
@@ -115,9 +111,8 @@ module.exports = {
     const jail = context.global;
     await jail.set("global", jail.derefInto());
 
-    // Step 4: Inject the sandbox object into the context
-    const sandboxProxy = new ivm.ExternalCopy(sandbox).copyInto();
-    await jail.set("sandbox", sandboxProxy);
+    // Step 4: Inject the sandbox object into the context (only the parts that can be passed)
+    await jail.set("sandbox", sandbox);
 
     // Step 5: Inject required modules
     await jail.set("require", new ivm.Reference((module) => {
