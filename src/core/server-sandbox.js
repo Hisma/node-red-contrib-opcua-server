@@ -3,12 +3,13 @@
  Copyright (c) 2018-2022 Klaus Landsdorf (http://node-red.plus/)
  **/
 "use strict";
+const ivm = require("isolated-vm");
+
 module.exports = {
   choreCompact: require("./chore").de.bianco.royal.compact,
   debugLog: require("./chore").de.bianco.royal.compact.opcuaSandboxDebug,
   errorLog: require("./chore").de.bianco.royal.compact.opcuaErrorDebug,
-  initialize: (node, coreServer, done) => {
-    const { VM } = require("isolated-vm");
+  initialize: async (node, coreServer, done) => {
     node.outstandingTimers = [];
     node.outstandingIntervals = [];
 
@@ -104,13 +105,36 @@ module.exports = {
       },
     };
 
-    const vm = new VM({
-      require: {
-        builtin: ["fs", "Math", "Date", "console"],
-      },
-      sandbox,
-    });
+    // Step 1: Create an isolate
+    const isolate = new ivm.Isolate({ memoryLimit: 128 }); // Memory limit in MB
 
-    done(node, vm);
+    // Step 2: Create a new context within the isolate
+    const context = await isolate.createContext();
+
+    // Step 3: Set up the global context
+    const jail = context.global;
+    await jail.set("global", jail.derefInto());
+
+    // Step 4: Inject the sandbox object into the context
+    const sandboxProxy = new ivm.ExternalCopy(sandbox).copyInto();
+    await jail.set("sandbox", sandboxProxy);
+
+    // Step 5: Inject required modules
+    await jail.set("require", new ivm.Reference((module) => {
+      if (module === "fs") {
+        return require("fs");
+      } else if (module === "Math") {
+        return Math;
+      } else if (module === "Date") {
+        return Date;
+      } else if (module === "console") {
+        return console;
+      } else {
+        throw new Error(`Module ${module} is not allowed`);
+      }
+    }));
+
+    // Step 6: Execute the done function with the isolate and context
+    done(node, { isolate, context });
   },
 };
