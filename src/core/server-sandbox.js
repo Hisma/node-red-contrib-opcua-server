@@ -8,7 +8,7 @@ module.exports = {
   debugLog: require("./chore").de.bianco.royal.compact.opcuaSandboxDebug,
   errorLog: require("./chore").de.bianco.royal.compact.opcuaErrorDebug,
   initialize: (node, coreServer, done) => {
-    const { VM } = require("vm2");
+    const { VM } = require("isolated-vm");
     node.outstandingTimers = [];
     node.outstandingIntervals = [];
 
