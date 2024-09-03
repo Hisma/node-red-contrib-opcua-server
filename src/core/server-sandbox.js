@@ -3,111 +3,91 @@
  Copyright (c) 2018-2022 Klaus Landsdorf (http://node-red.plus/)
  **/
 "use strict";
-const ivm = require("isolated-vm");
+const { VM, Reference } = require("isolated-vm");
 
 module.exports = {
   choreCompact: require("./chore").de.bianco.royal.compact,
   debugLog: require("./chore").de.bianco.royal.compact.opcuaSandboxDebug,
   errorLog: require("./chore").de.bianco.royal.compact.opcuaErrorDebug,
-  
   initialize: async (node, coreServer, done) => {
     node.outstandingTimers = [];
     node.outstandingIntervals = [];
 
-    // Step 1: Create an isolate
-    const isolate = new ivm.Isolate({ memoryLimit: 128 }); // Memory limit in MB
-
-    // Step 2: Create a new context within the isolate
+    const isolate = new VM();
     const context = await isolate.createContext();
 
-    // Step 3: Set up the global context
-    const jail = context.global;
-    await jail.set("global", jail.derefInto());
+    // Create a sandbox object with necessary functions and objects
+    const sandbox = {
+      node: new Reference(node),
+      coreServer: new Reference(coreServer),
+      sandboxNodeContext: new Reference({
+        set: (...args) => node.context().set(...args),
+        get: (...args) => node.context().get(...args),
+        keys: (...args) => node.context().keys(...args),
+        global: node.context().global,
+        flow: node.context().flow,
+      }),
+      sandboxFlowContext: new Reference({
+        set: (...args) => node.context().flow.set(...args),
+        get: (...args) => node.context().flow.get(...args),
+        keys: (...args) => node.context().flow.keys(...args),
+      }),
+      sandboxGlobalContext: new Reference({
+        set: (...args) => node.context().global.set(...args),
+        get: (...args) => node.context().global.get(...args),
+        keys: (...args) => node.context().global.keys(...args),
+      }),
+      sandboxEnv: new Reference({
+        get: (envVar) => node._flow.getSetting(envVar),
+      }),
+    };
 
-    // Step 4: Inject simple properties into the isolate
-    await jail.set("node", new ivm.ExternalCopy({ id: node.id }).copyInto());
-    await jail.set("coreServer", new ivm.ExternalCopy({}).copyInto()); // Pass any necessary simple properties of coreServer
+    // Inject the sandbox object into the context
+    await context.global.set('sandbox', sandbox);
 
-    // Step 5: Set up context objects with references for functions
-    await jail.set("sandboxNodeContext", {
-      set: new ivm.Reference((...args) => node.context().set.apply(node.context(), args)),
-      get: new ivm.Reference((...args) => node.context().get.apply(node.context(), args)),
-      keys: new ivm.Reference((...args) => node.context().keys.apply(node.context(), args)),
-    });
+    // Create wrapper functions for setTimeout and setInterval
+    const wrapTimerFunction = (funcName) => {
+      return new Reference((...args) => {
+        const callback = args[0];
+        const wrappedCallback = (...cbArgs) => {
+          try {
+            callback(...cbArgs);
+          } catch (err) {
+            node.error(err, {});
+          }
+        };
+        args[0] = wrappedCallback;
+        const timerId = global[funcName](...args);
+        node[`outstanding${funcName.slice(3)}s`].push(timerId);
+        return timerId;
+      });
+    };
 
-    await jail.set("sandboxFlowContext", {
-      set: new ivm.Reference((...args) => node.context().flow.set.apply(node.context().flow, args)),
-      get: new ivm.Reference((...args) => node.context().flow.get.apply(node.context().flow, args)),
-      keys: new ivm.Reference((...args) => node.context().flow.keys.apply(node.context().flow, args)),
-    });
-
-    await jail.set("sandboxGlobalContext", {
-      set: new ivm.Reference((...args) => node.context().global.set.apply(node.context().global, args)),
-      get: new ivm.Reference((...args) => node.context().global.get.apply(node.context().global, args)),
-      keys: new ivm.Reference((...args) => node.context().global.keys.apply(node.context().global, args)),
-    });
-
-    await jail.set("sandboxEnv", {
-      get: new ivm.Reference((envVar) => node._flow.getSetting(envVar)),
-    });
-
-    // Step 6: Setup setTimeout and setInterval functions
-    await jail.set("setTimeout", new ivm.Reference(function (func, delay) {
-      const timerId = setTimeout(() => {
-        try {
-          func();
-        } catch (err) {
-          node.error(err, {});
+    // Create wrapper functions for clearTimeout and clearInterval
+    const wrapClearFunction = (funcName) => {
+      return new Reference((id) => {
+        global[funcName](id);
+        const arrayName = `outstanding${funcName.slice(5)}s`;
+        const index = node[arrayName].indexOf(id);
+        if (index > -1) {
+          node[arrayName].splice(index, 1);
         }
-      }, delay);
-      node.outstandingTimers.push(timerId);
-      return timerId;
-    }));
+      });
+    };
 
-    await jail.set("clearTimeout", new ivm.Reference(function (id) {
-      clearTimeout(id);
-      const index = node.outstandingTimers.indexOf(id);
-      if (index > -1) {
-        node.outstandingTimers.splice(index, 1);
-      }
-    }));
+    // Inject timer functions into the context
+    await context.global.set('setTimeout', wrapTimerFunction('setTimeout'));
+    await context.global.set('setInterval', wrapTimerFunction('setInterval'));
+    await context.global.set('clearTimeout', wrapClearFunction('clearTimeout'));
+    await context.global.set('clearInterval', wrapClearFunction('clearInterval'));
 
-    await jail.set("setInterval", new ivm.Reference(function (func, interval) {
-      const intervalId = setInterval(() => {
-        try {
-          func();
-        } catch (err) {
-          node.error(err, {});
-        }
-      }, interval);
-      node.outstandingIntervals.push(intervalId);
-      return intervalId;
-    }));
+    // Inject console methods
+    const console = ['log', 'error', 'warn', 'info', 'debug'].reduce((acc, method) => {
+      acc[method] = new Reference((...args) => global.console[method](...args));
+      return acc;
+    }, {});
+    await context.global.set('console', new Reference(console));
 
-    await jail.set("clearInterval", new ivm.Reference(function (id) {
-      clearInterval(id);
-      const index = node.outstandingIntervals.indexOf(id);
-      if (index > -1) {
-        node.outstandingIntervals.splice(index, 1);
-      }
-    }));
-
-    // Step 7: Inject require function for specific modules
-    await jail.set("require", new ivm.Reference((module) => {
-      if (module === "fs") {
-        return require("fs");
-      } else if (module === "Math") {
-        return Math;
-      } else if (module === "Date") {
-        return Date;
-      } else if (module === "console") {
-        return console;
-      } else {
-        throw new Error(`Module ${module} is not allowed`);
-      }
-    }));
-
-    // Step 8: Execute the done function with the isolate and context
-    done(node, { isolate, context });
+    done(node, context);
   },
 };
