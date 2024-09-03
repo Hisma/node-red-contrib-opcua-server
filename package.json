@@ -55,7 +55,7 @@
   "node-red": {
     "version": ">=2",
     "nodes": {
-      "Compact-Server": "opcuaCompact/server-node.js"
+      "Compact-Server": "src/server-node.js"
     }
   },
   "keywords": [
