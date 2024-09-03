@@ -3,91 +3,114 @@
  Copyright (c) 2018-2022 Klaus Landsdorf (http://node-red.plus/)
  **/
 "use strict";
-const { VM, Reference } = require("isolated-vm");
-
 module.exports = {
   choreCompact: require("./chore").de.bianco.royal.compact,
   debugLog: require("./chore").de.bianco.royal.compact.opcuaSandboxDebug,
   errorLog: require("./chore").de.bianco.royal.compact.opcuaErrorDebug,
-  initialize: async (node, coreServer, done) => {
+  initialize: (node, coreServer, done) => {
+    const { VM } = require("vm2");
     node.outstandingTimers = [];
     node.outstandingIntervals = [];
 
-    const isolate = new VM();
-    const context = await isolate.createContext();
-
-    // Create a sandbox object with necessary functions and objects
+    /* istanbul ignore next */
     const sandbox = {
-      node: new Reference(node),
-      coreServer: new Reference(coreServer),
-      sandboxNodeContext: new Reference({
-        set: (...args) => node.context().set(...args),
-        get: (...args) => node.context().get(...args),
-        keys: (...args) => node.context().keys(...args),
-        global: node.context().global,
-        flow: node.context().flow,
-      }),
-      sandboxFlowContext: new Reference({
-        set: (...args) => node.context().flow.set(...args),
-        get: (...args) => node.context().flow.get(...args),
-        keys: (...args) => node.context().flow.keys(...args),
-      }),
-      sandboxGlobalContext: new Reference({
-        set: (...args) => node.context().global.set(...args),
-        get: (...args) => node.context().global.get(...args),
-        keys: (...args) => node.context().global.keys(...args),
-      }),
-      sandboxEnv: new Reference({
-        get: (envVar) => node._flow.getSetting(envVar),
-      }),
-    };
-
-    // Inject the sandbox object into the context
-    await context.global.set('sandbox', sandbox);
-
-    // Create wrapper functions for setTimeout and setInterval
-    const wrapTimerFunction = (funcName) => {
-      return new Reference((...args) => {
-        const callback = args[0];
-        const wrappedCallback = (...cbArgs) => {
+      node,
+      coreServer,
+      sandboxNodeContext: {
+        set: function () {
+          node.context().set.apply(node, arguments);
+        },
+        get: function () {
+          return node.context().get.apply(node, arguments);
+        },
+        keys: function () {
+          return node.context().keys.apply(node, arguments);
+        },
+        get global() {
+          return node.context().global;
+        },
+        get flow() {
+          return node.context().flow;
+        },
+      },
+      sandboxFlowContext: {
+        set: function () {
+          node.context().flow.set.apply(node, arguments);
+        },
+        get: function () {
+          return node.context().flow.get.apply(node, arguments);
+        },
+        keys: function () {
+          return node.context().flow.keys.apply(node, arguments);
+        },
+      },
+      sandboxGlobalContext: {
+        set: function () {
+          node.context().global.set.apply(node, arguments);
+        },
+        get: function () {
+          return node.context().global.get.apply(node, arguments);
+        },
+        keys: function () {
+          return node.context().global.keys.apply(node, arguments);
+        },
+      },
+      sandboxEnv: {
+        get: function (envVar) {
+          const flow = node._flow;
+          return flow.getSetting(envVar);
+        },
+      },
+      setTimeout: function () {
+        const func = arguments[0];
+        const timerId = setTimeout.apply(this, arguments);
+        arguments[0] = function () {
+          sandbox.clearTimeout(timerId);
           try {
-            callback(...cbArgs);
+            func.apply(this, arguments);
           } catch (err) {
             node.error(err, {});
           }
         };
-        args[0] = wrappedCallback;
-        const timerId = global[funcName](...args);
-        node[`outstanding${funcName.slice(3)}s`].push(timerId);
+        node.outstandingTimers.push(timerId);
         return timerId;
-      });
-    };
-
-    // Create wrapper functions for clearTimeout and clearInterval
-    const wrapClearFunction = (funcName) => {
-      return new Reference((id) => {
-        global[funcName](id);
-        const arrayName = `outstanding${funcName.slice(5)}s`;
-        const index = node[arrayName].indexOf(id);
+      },
+      clearTimeout: function (id) {
+        clearTimeout(id);
+        const index = node.outstandingTimers.indexOf(id);
         if (index > -1) {
-          node[arrayName].splice(index, 1);
+          node.outstandingTimers.splice(index, 1);
         }
-      });
+      },
+      setInterval: function () {
+        const func = arguments[0];
+        const timerId = setInterval.apply(this, arguments);
+        arguments[0] = function () {
+          try {
+            func.apply(this, arguments);
+          } catch (err) {
+            node.error(err, {});
+          }
+        };
+        node.outstandingIntervals.push(timerId);
+        return timerId;
+      },
+      clearInterval: function (id) {
+        clearInterval(id);
+        const index = node.outstandingIntervals.indexOf(id);
+        if (index > -1) {
+          node.outstandingIntervals.splice(index, 1);
+        }
+      },
     };
 
-    // Inject timer functions into the context
-    await context.global.set('setTimeout', wrapTimerFunction('setTimeout'));
-    await context.global.set('setInterval', wrapTimerFunction('setInterval'));
-    await context.global.set('clearTimeout', wrapClearFunction('clearTimeout'));
-    await context.global.set('clearInterval', wrapClearFunction('clearInterval'));
+    const vm = new VM({
+      require: {
+        builtin: ["fs", "Math", "Date", "console"],
+      },
+      sandbox,
+    });
 
-    // Inject console methods
-    const console = ['log', 'error', 'warn', 'info', 'debug'].reduce((acc, method) => {
-      acc[method] = new Reference((...args) => global.console[method](...args));
-      return acc;
-    }, {});
-    await context.global.set('console', new Reference(console));
-
-    done(node, context);
+    done(node, vm);
   },
 };
