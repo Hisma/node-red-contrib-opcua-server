@@ -14,18 +14,17 @@
   },
   "main": "index.js",
   "files": [
-    "docs",
     "examples",
-    "opcuaCompact",
+    "src",
     "create_certificates.js",
     "supporter.js"
   ],
   "dependencies": {
     "better-assert": "~1.0.2",
-    "debug": "~4.3.4",
-    "node-opcua": "~2.64.1",
+    "debug": "~4.3.6",
+    "node-opcua": "~2.130.0",
     "source-map-support": "~0.5.21",
-    "vm2": "~3.9.10"
+    "isolated-vm": "~5.0.1"
   },
   "scripts": {
     "build": "npm run clean:formatter && gulp publish",
