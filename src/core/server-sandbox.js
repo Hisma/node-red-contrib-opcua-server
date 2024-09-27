@@ -1,21 +1,33 @@
-/**
- MIT License
- Copyright (c) 2018-2022 Klaus Landsdorf (http://node-red.plus/)
- **/
-"use strict";
+// server-sandbox.js
+const { VM } = require("vm2");
+
 module.exports = {
-  choreCompact: require("./chore").de.bianco.royal.compact,
-  debugLog: require("./chore").de.bianco.royal.compact.opcuaSandboxDebug,
-  errorLog: require("./chore").de.bianco.royal.compact.opcuaErrorDebug,
-  initialize: (node, coreServer, done) => {
-    const { VM } = require("vm2");
+  initialize: (node, coreServer, server, addressSpace, eventObjects, done) => {
     node.outstandingTimers = [];
     node.outstandingIntervals = [];
 
     /* istanbul ignore next */
+    // Attach sandboxFlowContext directly to eventObjects
+    eventObjects.sandboxFlowContext = {
+      set: function () {
+        node.context().flow.set.apply(node, arguments);
+      },
+      get: function () {
+        return node.context().flow.get.apply(node, arguments);
+      },
+      keys: function () {
+        return node.context().flow.keys.apply(node, arguments);
+      },
+    };
+
     const sandbox = {
       node,
       coreServer,
+      opcua: coreServer.opcua, // Expose the opcua module
+      server,                     // Expose the OPC UA server instance
+      addressSpace,               // Expose the address space
+      eventObjects,               // Now includes sandboxFlowContext
+
       sandboxNodeContext: {
         set: function () {
           node.context().set.apply(node, arguments);
@@ -33,17 +45,7 @@ module.exports = {
           return node.context().flow;
         },
       },
-      sandboxFlowContext: {
-        set: function () {
-          node.context().flow.set.apply(node, arguments);
-        },
-        get: function () {
-          return node.context().flow.get.apply(node, arguments);
-        },
-        keys: function () {
-          return node.context().flow.keys.apply(node, arguments);
-        },
-      },
+      // Removed separate sandboxFlowContext since it's now within eventObjects
       sandboxGlobalContext: {
         set: function () {
           node.context().global.set.apply(node, arguments);
