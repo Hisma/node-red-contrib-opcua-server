@@ -3,6 +3,11 @@
   "version": "1.0",
   "description": "Node-RED contribution nodes with next generation OPC UA in a compact and less dependencies package.",
   "author": "Bianco Royal <developers@bianco-royal.de>",
+  "name": "node-red-contrib-opcua-server-classic",
+  "version": "1.0.0.",
+  "description": "Fork of the original 'node-red-contrib-opcua-server' package that is no longer maintained, this has been refactored to support the latest version of node opc-ua and fixes incomplete/non-working features",
+  "author": ["Bianco Royal <developers@bianco-royal.de>", 
+    "Richard Meyer"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/BiancoRoyal/node-red-contrib-opcua-server.git"
@@ -10,7 +15,7 @@
   "license": "MIT",
   "homepage": "https://noderedplus.de/",
   "bugs": {
-    "url": "https://github.com/BiancoRoyal/node-red-contrib-opcua-server/issues"
+    "url": "https://github.com/Hisma/node-red-contrib-opcua-server/issues"
   },
   "main": "index.js",
   "files": [
