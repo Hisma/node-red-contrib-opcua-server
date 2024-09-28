@@ -2,6 +2,7 @@
  MIT License
  Copyright (c) 2018-2022 Klaus Landsdorf (http://node-red.plus/)
  Copyright (c) 2019 Sterfive (https://www.sterfive.com/)
+ Updated by Richard Meyer 2024
  **/
  "use strict";
 

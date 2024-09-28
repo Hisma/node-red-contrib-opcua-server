@@ -9,10 +9,10 @@
 [![Build and publish](https://github.com/BiancoRoyal/node-red-contrib-opcua-server/actions/workflows/build.yml/badge.svg)](https://github.com/BiancoRoyal/node-red-contrib-opcua-server/actions/workflows/build.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/b229fe21da624408b51d075e8e0800cc)](https://www.codacy.com/gh/BiancoRoyal/node-red-contrib-opcua-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=BiancoRoyal/node-red-contrib-opcua-server&amp;utm_campaign=Badge_Grade)
 
-# node-red-contrib-opcua-server
+# node-red-contrib-opcua-server-refresh
 
 A programmable OPC UA server for Node-RED based on node-opcua next generation version with less dependencies.
-Updated to work with the latest revision of node opcua.
+This is a fork of the original work Klaus Landorf by Richard Meyer.  The original package has not been maintained for over 2 years.  So this version was created to work with the latest version of node opc-ua and other dependencies, and fixed some broken/inprogress features such as loading of nodeset xml files from inside the node configuration, as well as full security policy support.
 
 ## Core
 
@@ -55,3 +55,4 @@ Prettier
 
 based on node-opcua we use MIT license
 Copyright (c) 2019 [Bianco Royal Software Innovations®](https://github.com/BiancoRoyal/)
+Forked and updated by Richard Meyer

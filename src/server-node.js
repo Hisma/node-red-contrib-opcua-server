@@ -1,13 +1,14 @@
 /**
  MIT License
  Copyright (c) 2018-2022 Klaus Landsdorf (http://node-red.plus/)
+ Updated by Richard Meyer 2024
  **/
  module.exports = function (RED) {
   "use strict";
 
   function OPCUACompactServerNode(nodeConfig) {
     const coreServer = require("./core/server");
-    const serverSandbox = require("./server-sandbox"); // Ensure server-sandbox.js is correctly required
+    const serverSandbox = require("./server-sandbox");
 
     // Create the Node-RED node
     RED.nodes.createNode(this, nodeConfig);
