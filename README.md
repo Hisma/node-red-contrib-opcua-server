@@ -12,7 +12,9 @@
 # node-red-contrib-opcua-server-refresh
 
 A programmable OPC UA server for Node-RED based on node-opcua next generation version with less dependencies.
-This is a fork of the original work Klaus Landorf by Richard Meyer.  The original package has not been maintained for over 2 years.  So this version was created to work with the latest version of node opc-ua and other dependencies, and fixed some broken/inprogress features such as loading of nodeset xml files from inside the node configuration, as well as full security policy support.
+
+NOTE:
+This is a fork of the original work Klaus Landorf by Richard Meyer.  The original package has not been maintained for over 2 years.  This updated version was created to work with the latest version of node opc-ua and other dependencies, and fixed some broken/in progress features such as loading of nodeset xml files from inside the node configuration, as well as full security policy support.
 
 ## Core
 
