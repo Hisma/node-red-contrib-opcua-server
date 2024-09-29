@@ -177,7 +177,7 @@ module.exports = function (RED) {
   }
 
   // Register the Node-RED node type
-  RED.nodes.registerType("opcua-compact-server", OPCUACompactServerNode);
+  RED.nodes.registerType("opcua-compact-server-refresh", OPCUACompactServerNode);
 
   // Register the node in the Node-RED library (optional, based on your setup)
   RED.library.register("opcua");
