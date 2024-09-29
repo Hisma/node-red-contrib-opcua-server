@@ -6,7 +6,7 @@
 module.exports = function (RED) {
   "use strict";
 
-  function OPCUACompactServerNode(nodeConfig) {
+  function OPCUACompactServerRefreshNode(nodeConfig) {
     const coreServer = require("./core/server");
     const serverSandbox = require("./core/server-sandbox");
 
@@ -177,7 +177,7 @@ module.exports = function (RED) {
   }
 
   // Register the Node-RED node type
-  RED.nodes.registerType("opcua-compact-server-refresh", OPCUACompactServerNode);
+  RED.nodes.registerType("opcua-compact-server-refresh", OPCUACompactServerRefreshNode);
 
   // Register the node in the Node-RED library (optional, based on your setup)
   RED.library.register("opcua");
