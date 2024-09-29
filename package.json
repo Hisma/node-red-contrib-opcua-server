@@ -11,6 +11,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Hisma/node-red-contrib-opcua-server-refresh.git"
+    "url": "git+https://github.com/Hisma/node-red-contrib-opcua-server.git"
   },
   "license": "MIT",
   "homepage": "https://noderedplus.de/",
