@@ -1,13 +1,8 @@
 {
   "name": "node-red-contrib-opcua-server-refresh",
   "version": "1.0.0",
-  "description": "Node-RED contribution nodes with next generation OPC UA in a compact and less dependencies package.",
-  "author": "Bianco Royal <developers@bianco-royal.de>",
-  "name": "node-red-contrib-opcua-server-refresh",
-  "version": "1.0.0.",
-  "description": "Fork of the original 'node-red-contrib-opcua-server' package that is no longer maintained, this has been refactored to support the latest version of node opc-ua and fixes incomplete/non-working features",
-  "author": ["Bianco Royal <developers@bianco-royal.de>", 
-    "Richard Meyer"],
+  "description": "Fork of the original 'node-red-contrib-opcua-server' package that is no longer maintained. This has been refactored to support the latest version of node-opcua and fixes incomplete/non-working features.",
+  "author": "Bianco Royal <developers@bianco-royal.de>, Richard Meyer",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Hisma/node-red-contrib-opcua-server-refresh.git"
@@ -52,7 +47,7 @@
     "lint:md": "remark .",
     "prepublishOnly": "npm test && npm run coverage && npm run build",
     "dev-link": "npm install && npm run build && npm link",
-    "dev-unlink": "npm unlink node-red-contrib-opcua-server -g"
+    "dev-unlink": "npm unlink node-red-contrib-opcua-server-refresh -g"
   },
   "engines": {
     "node": ">=14"
