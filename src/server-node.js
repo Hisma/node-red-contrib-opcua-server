@@ -8,7 +8,7 @@ module.exports = function (RED) {
 
   function OPCUACompactServerNode(nodeConfig) {
     const coreServer = require("./core/server");
-    const serverSandbox = require(".core/server-sandbox");
+    const serverSandbox = require("./core/server-sandbox");
 
     // Create the Node-RED node
     RED.nodes.createNode(this, nodeConfig);
