@@ -32,7 +32,6 @@
     "test": "npm run check:formatter && jest --detectOpenHandles --forceExit --logHeapUsage",
     "test:clearCache": "jest --clearCache",
     "test:coverage": "jest --coverage",
-    "test:ci": "npm run test -- --ci --silent --json --outputFile=scripts/out.json",
     "coverage": "gulp clean && rm -rf ./jcoverage && jest --coverage --detectOpenHandles --forceExit --logHeapUsage --debug",
     "coverage:ci": "jest --coverage --detectOpenHandles --forceExit --logHeapUsage --ci --silent --json --outputFile=scripts/out.json",
     "coverage:upload": "cat ./jcoverage/lcov.info | codacy-coverage --token $CODACY_PROJECT_TOKEN_OPCUA_SERVER",
