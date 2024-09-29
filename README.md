@@ -24,7 +24,7 @@ using next generation node-opcua version from [Etienne Rossignon](https://github
 
 Run the following command in your Node-RED user directory - typically `~/.node-red`
 
-        npm install node-red-contrib-opcua-server
+        npm install node-red-contrib-opcua-server-refresh
 
 try these options on npm install to build from source if you have problems to install
 
