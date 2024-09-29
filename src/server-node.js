@@ -3,7 +3,7 @@
  Copyright (c) 2018-2022 Klaus Landsdorf (http://node-red.plus/)
  Updated by Richard Meyer 2024
  **/
- module.exports = function (RED) {
+module.exports = function (RED) {
   "use strict";
 
   function OPCUACompactServerNode(nodeConfig) {
@@ -26,7 +26,9 @@
 
     // Delay Initialization based on configuration
     const initOPCUATimer = setTimeout(() => {
-      coreServer.detailLog(`Initializing OPC UA Server for node ID: ${node.id}`);
+      coreServer.detailLog(
+        `Initializing OPC UA Server for node ID: ${node.id}`
+      );
       coreServer.setStatusPending(node);
 
       // Get server options from the core server
@@ -44,16 +46,27 @@
       if (nodeConfig.addressSpaceScript) {
         try {
           // Safely evaluate the addressSpaceScript as a function
-          node.contribOPCUACompact.constructAddressSpaceScript = eval(`(${nodeConfig.addressSpaceScript})`);
-          coreServer.debugLog(`Address space script successfully loaded for node ID: ${node.id}`);
+          node.contribOPCUACompact.constructAddressSpaceScript = eval(
+            `(${nodeConfig.addressSpaceScript})`
+          );
+          coreServer.debugLog(
+            `Address space script successfully loaded for node ID: ${node.id}`
+          );
         } catch (err) {
           node.error(`Failed to evaluate addressSpaceScript: ${err.message}`);
-          coreServer.errorLog(`Address space script evaluation error: ${err.stack}`);
-          coreServer.setStatusError(node, `Address space script error: ${err.message}`);
+          coreServer.errorLog(
+            `Address space script evaluation error: ${err.stack}`
+          );
+          coreServer.setStatusError(
+            node,
+            `Address space script error: ${err.message}`
+          );
           return;
         }
       } else {
-        node.warn("No addressSpaceScript provided. The server might not construct the address space correctly.");
+        node.warn(
+          "No addressSpaceScript provided. The server might not construct the address space correctly."
+        );
         coreServer.setStatusError(node, "No addressSpaceScript provided.");
         // Depending on requirements, you might choose to proceed or halt initialization here
       }
@@ -69,8 +82,8 @@
           serverSandbox.initialize(
             node,
             coreServer,
-            opcuaServer,                       // Pass the OPC UA server instance
-            opcuaServer.engine.addressSpace,   // Pass the address space
+            opcuaServer, // Pass the OPC UA server instance
+            opcuaServer.engine.addressSpace, // Pass the address space
             node.contribOPCUACompact.eventObjects, // Pass eventObjects
             (node, vm) => {
               node.contribOPCUACompact.vm = vm;
@@ -100,9 +113,16 @@
                 node.emit("server_node_running");
                 coreServer.setStatusActive(node);
               } catch (err) {
-                node.error(`Error executing addressSpaceScript: ${err.message}`);
-                coreServer.errorLog(`Address space script execution error: ${err.stack}`);
-                coreServer.setStatusError(node, `Address space script execution error: ${err.message}`);
+                node.error(
+                  `Error executing addressSpaceScript: ${err.message}`
+                );
+                coreServer.errorLog(
+                  `Address space script execution error: ${err.stack}`
+                );
+                coreServer.setStatusError(
+                  node,
+                  `Address space script execution error: ${err.message}`
+                );
               }
             }
           );

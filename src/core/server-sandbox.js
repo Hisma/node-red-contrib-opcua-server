@@ -29,9 +29,9 @@ module.exports = {
       node,
       coreServer,
       opcua: coreServer.opcua, // Expose the opcua module
-      server,                     // Expose the OPC UA server instance
-      addressSpace,               // Expose the address space
-      eventObjects,               // Now includes sandboxFlowContext
+      server, // Expose the OPC UA server instance
+      addressSpace, // Expose the address space
+      eventObjects, // Now includes sandboxFlowContext
 
       sandboxNodeContext: {
         set: function () {
