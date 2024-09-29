@@ -1,0 +1,135 @@
+[
+    {
+        "id": "986c4830018db1c8",
+        "type": "tab",
+        "label": "OPC-UA Custom Context Server",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "d2da9c5213229a72",
+        "type": "comment",
+        "z": "986c4830018db1c8",
+        "name": "simulate real-time PLC data & store in conveyorData context flow memory",
+        "info": "",
+        "x": 380,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "ec3183fcd3fba568",
+        "type": "comment",
+        "z": "986c4830018db1c8",
+        "name": "OPC UA Server Publishing PLC conveyorData",
+        "info": "",
+        "x": 1010,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "43f5ea088a1a8790",
+        "type": "opcua-compact-server-refresh",
+        "z": "986c4830018db1c8",
+        "port": 54840,
+        "endpoint": "",
+        "productUri": "",
+        "acceptExternalCommands": true,
+        "maxAllowedSessionNumber": 10,
+        "maxConnectionsPerEndpoint": 10,
+        "maxAllowedSubscriptionNumber": 100,
+        "alternateHostname": "",
+        "name": "",
+        "showStatusActivities": false,
+        "showErrors": false,
+        "allowAnonymous": true,
+        "individualCerts": false,
+        "isAuditing": false,
+        "serverDiscovery": true,
+        "users": [],
+        "xmlsetsOPCUA": [],
+        "publicCertificateFile": "",
+        "privateCertificateFile": "",
+        "registerServerMethod": 1,
+        "discoveryServerEndpointUrl": "",
+        "capabilitiesForMDNS": "",
+        "maxNodesPerRead": 1000,
+        "maxNodesPerWrite": 1000,
+        "maxNodesPerHistoryReadData": 100,
+        "maxNodesPerBrowse": 3000,
+        "maxBrowseContinuationPoints": 10,
+        "maxHistoryContinuationPoints": 10,
+        "delayToInit": 1000,
+        "delayToClose": 200,
+        "serverShutdownTimeout": 100,
+        "addressSpaceScript": "function(server, addressSpace, opcua, eventObjects, done) {\n\n  node.warn(\"Starting OPCUA Server\");\n\n  // Debug Statements to verify eventObjects and sandboxFlowContext\n  if (!opcua) {\n    node.error(\"OPCUA module is not available.\");\n    return done(new Error(\"OPCUA module is undefined.\"));\n  }\n\n  const namespace = addressSpace.getOwnNamespace();\n\n  const Variant = opcua.Variant;\n  const DataType = opcua.DataType;\n\n  // Ensure sandboxFlowContext is available\n  if (!eventObjects.sandboxFlowContext || typeof eventObjects.sandboxFlowContext.set !== 'function') {\n    node.error(\"sandboxFlowContext is not available in eventObjects.\");\n    return done(new Error(\"sandboxFlowContext is undefined.\"));\n  }\n\n  // Initialize flow context variables directly\n  eventObjects.sandboxFlowContext.set(\"conveyorData.Conveyor_RTS\", false);\n  eventObjects.sandboxFlowContext.set(\"conveyorData.Robot_RTS\", false);\n  eventObjects.sandboxFlowContext.set(\"conveyorData.Robot_Position\", 0);\n  eventObjects.sandboxFlowContext.set(\"conveyorData.Conveyor_Running\", false);\n  eventObjects.sandboxFlowContext.set(\"conveyorData.Line4_State\", 0);\n  eventObjects.sandboxFlowContext.set(\"conveyorData.Line4_Fault\", false);\n\n  coreServer.debugLog(\"init dynamic address space\");\n  const rootFolder = addressSpace.findNode(\"RootFolder\");\n\n  node.warn(\"Constructing new address space for OPC UA\");\n\n  const myDevice = namespace.addFolder(rootFolder.objects, {\n    browseName: \"Line 4 PLC\"\n  });\n  const conveyorFolder = namespace.addFolder(myDevice, { browseName: \"Conveyor\" });\n  const conveyorBools = namespace.addFolder(conveyorFolder, {\n    browseName: \"Bools\"\n  });\n  const conveyorDINTs = namespace.addFolder(conveyorFolder, {\n    browseName: \"DINTs\"\n  });\n  const conveyorFloats = namespace.addFolder(conveyorFolder, {\n    browseName: \"Floats\"\n  });\n\n  // Construct Nodes with Getters and Setters\n  const Conveyor_RTS = namespace.addVariable({\n    organizedBy: conveyorBools,\n    browseName: \"Conveyor Ready to Start\",\n    nodeId: \"ns=1;s=Conveyor_RTS\",\n    dataType: \"Boolean\",\n    value: {\n      get: function () {\n        return new Variant({\n          dataType: DataType.Boolean,\n          value: eventObjects.sandboxFlowContext.get(\"conveyorData.Conveyor_RTS\")\n        });\n      },\n      set: function (variant) {\n        eventObjects.sandboxFlowContext.set(\n          \"conveyorData.Conveyor_RTS\",\n          variant.value\n        );\n        return opcua.StatusCodes.Good;\n      }\n    }\n  });\n\n  const Robot_RTS = namespace.addVariable({\n    organizedBy: conveyorBools,\n    browseName: \"Robot Ready to Start\",\n    nodeId: \"ns=1;s=Robot_RTS\",\n    dataType: \"Boolean\",\n    value: {\n      get: function () {\n        return new Variant({\n          dataType: DataType.Boolean,\n          value: eventObjects.sandboxFlowContext.get(\"conveyorData.Robot_RTS\")\n        });\n      },\n      set: function (variant) {\n        eventObjects.sandboxFlowContext.set(\n          \"conveyorData.Robot_RTS\",\n          variant.value\n        );\n        return opcua.StatusCodes.Good;\n      }\n    }\n  });\n\n  const Conveyor_Running = namespace.addVariable({\n    organizedBy: conveyorBools,\n    browseName: \"Conveyor Running\",\n    nodeId: \"ns=1;s=Conveyor_Running\",\n    dataType: \"Boolean\",\n    value: {\n      get: function () {\n        return new Variant({\n          dataType: DataType.Boolean,\n          value: eventObjects.sandboxFlowContext.get(\"conveyorData.Conveyor_Running\")\n        });\n      },\n      set: function (variant) {\n        eventObjects.sandboxFlowContext.set(\n          \"conveyorData.Conveyor_Running\",\n          variant.value\n        );\n        return opcua.StatusCodes.Good;\n      }\n    }\n  });\n\n  const Line4_Fault = namespace.addVariable({\n    organizedBy: conveyorBools,\n    browseName: \"Line 4 Faulted\",\n    nodeId: \"ns=1;s=Line4_Fault\",\n    dataType: \"Boolean\",\n    value: {\n      get: function () {\n        return new Variant({\n          dataType: DataType.Boolean,\n          value: eventObjects.sandboxFlowContext.get(\"conveyorData.Line4_Fault\")\n        });\n      },\n      set: function (variant) {\n        eventObjects.sandboxFlowContext.set(\n          \"conveyorData.Line4_Fault\",\n          variant.value\n        );\n        return opcua.StatusCodes.Good;\n      }\n    }\n  });\n\n  const Line4_State = namespace.addVariable({\n    organizedBy: conveyorDINTs,\n    browseName: \"Line 4 State\",\n    nodeId: \"ns=1;s=Line4_State\",\n    dataType: \"Int32\",\n    value: {\n      get: function () {\n        return new Variant({\n          dataType: DataType.Int32,\n          value: eventObjects.sandboxFlowContext.get(\"conveyorData.Line4_State\")\n        });\n      },\n      set: function (variant) {\n        eventObjects.sandboxFlowContext.set(\n          \"conveyorData.Line4_State\",\n          variant.value\n        );\n        return opcua.StatusCodes.Good;\n      }\n    }\n  });\n\n  const Robot_Position = namespace.addVariable({\n    organizedBy: conveyorFloats,\n    browseName: \"Robot Axis A1 Position\",\n    nodeId: \"ns=1;s=Robot_Position\",\n    dataType: \"Float\",\n    value: {\n      get: function () {\n        return new Variant({\n          dataType: DataType.Float,\n          value: eventObjects.sandboxFlowContext.get(\"conveyorData.Robot_Position\")\n        });\n      },\n      set: function (variant) {\n        eventObjects.sandboxFlowContext.set(\n          \"conveyorData.Robot_Position\",\n          parseFloat(variant.value)\n        );\n        return opcua.StatusCodes.Good;\n      }\n    }\n  });\n\n  //------------------------------------------------------------------------------\n  // Add a view\n  //------------------------------------------------------------------------------\n  const viewBools = namespace.addView({\n    organizedBy: rootFolder.views,\n    browseName: \"Line 4 Conveyor Bools\"\n  });\n\n  const viewDINTs = namespace.addView({\n    organizedBy: rootFolder.views,\n    browseName: \"Line4 Conveyor DINTs\"\n  });\n\n  const viewFloats = namespace.addView({\n    organizedBy: rootFolder.views,\n    browseName: \"Line4 Conveyor Floats\"\n  });\n\n  viewBools.addReference({\n    referenceType: \"Organizes\",\n    nodeId: Conveyor_RTS.nodeId\n  });\n\n  viewBools.addReference({\n    referenceType: \"Organizes\",\n    nodeId: Robot_RTS.nodeId\n  });\n\n  viewBools.addReference({\n    referenceType: \"Organizes\",\n    nodeId: Conveyor_Running.nodeId\n  });\n\n  viewBools.addReference({\n    referenceType: \"Organizes\",\n    nodeId: Line4_Fault.nodeId\n  });\n\n  viewDINTs.addReference({\n    referenceType: \"Organizes\",\n    nodeId: Line4_State.nodeId\n  });\n\n  viewFloats.addReference({\n    referenceType: \"Organizes\",\n    nodeId: Robot_Position.nodeId\n  });\n\n  node.warn(\"Construction of new address space for OPC UA done\");\n\n  done();\n}\n",
+        "x": 1010,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "eea020c4.58aa",
+        "type": "inject",
+        "z": "986c4830018db1c8",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.5",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 230,
+        "y": 600,
+        "wires": [
+            [
+                "11876179.c98d97"
+            ]
+        ]
+    },
+    {
+        "id": "11876179.c98d97",
+        "type": "function",
+        "z": "986c4830018db1c8",
+        "name": "Generate simulated PLC Data",
+        "func": "// Simulate random data coming from a conveyor PLC \nflow.set('conveyorData.Conveyor_RTS', Math.random() >= 0.5) // random bool\nflow.set('conveyorData.Robot_RTS', Math.random() >= 0.5) // random bool\nflow.set('conveyorData.Robot_Position', Math.random() + 14.0) // random DINT\nflow.set('conveyorData.Conveyor_Running', Math.random() >= 0.5) // random bool\nflow.set('conveyorData.Line4_State', Math.random() + 16.0) // random DINT\nflow.set('conveyorData.Line4_Fault', Math.random() >= 0.5) // random bool\n\nmsg.payload = [\n    flow.get('conveyorData.Conveyor_RTS'),\n    flow.get('conveyorData.Robot_RTS'),\n    flow.get('conveyorData.Robot_Position'),\n    flow.get('conveyorData.Conveyor_Running'),\n    flow.get('conveyorData.Line4_State'),\n    flow.get('conveyorData.Line4_Fault'),\n]\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 600,
+        "wires": [
+            [
+                "a832c668c3a8cfad"
+            ]
+        ]
+    },
+    {
+        "id": "a832c668c3a8cfad",
+        "type": "debug",
+        "z": "986c4830018db1c8",
+        "name": "debug 6",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 600,
+        "wires": []
+    }
+]
