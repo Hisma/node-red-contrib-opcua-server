@@ -69,6 +69,12 @@ If you get an error `TypeError: Cannot read properties of null (reading 'objects
 If the server can see the nodeset file, you can confirm it was loaded correctly by checking the `Types -> DataTypes -> XML Schema` path in a OPC UA Client browser - 
 ![Screenshot of nodeset](./screenshots/nodesetxml.png)
 
+## Examples
+Example projects are provided as part of the project in the `examples` folder.  Links to the examples here - 
+[Link to Example Flows](https://github.com/Hisma/node-red-contrib-opcua-server-refresh/tree/master/examples)
+You can simply copy the json and import them into your flows.  
+There are two examples - one is simply a copy of the example provided by default with the project called `example-server.json`.  The other is an example that simulates data coming from a PLC in node-red and uses flow context memory to pull the dynamic data in data from outside the server called `example-with-context.json`.
+
 ## Contribution
 
 **Yes, sure!** Please help us to make it even better and send your pull requests or tests!

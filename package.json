@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-opcua-server-refresh",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Fork of the original 'node-red-contrib-opcua-server' package that is no longer maintained. This has been refactored to support the latest version of node-opcua and fixes incomplete/non-working features.",
   "author": "Bianco Royal <developers@bianco-royal.de>, Richard Meyer",
   "repository": {
