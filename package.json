@@ -10,7 +10,7 @@
     "Richard Meyer"],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BiancoRoyal/node-red-contrib-opcua-server.git"
+    "url": "git+https://github.com/Hisma/node-red-contrib-opcua-server.git"
   },
   "license": "MIT",
   "homepage": "https://noderedplus.de/",
