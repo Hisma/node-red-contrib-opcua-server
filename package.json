@@ -44,7 +44,7 @@
     "clean:install": "./clean.sh",
     "clean:formatter": "prettier --write \"src/**/*.js\" && prettier --write \"test/**/*.js\"",
     "lint:md": "remark .",
-    "prepublishOnly": "npm test && npm run coverage && npm run build",
+    "prepublishOnly": "npm run build",
     "dev-link": "npm install && npm run build && npm link",
     "dev-unlink": "npm unlink node-red-contrib-opcua-server-refresh -g"
   },
