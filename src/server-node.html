@@ -3,8 +3,8 @@
     Copyright (c) 2018-2022 Klaus Landsdorf (http://node-red.plus/)
     Updated by Richard Meyer 2024
 -->
-<script type="text/x-red" data-help-name="opcua-compact-server">
-  <h2>OPC UA Compact Server</h2>
+<script type="text/x-red" data-help-name="opcua-compact-server-refresh">
+  <h2>OPC UA Compact Server Refresh</h2>
 
   <p>The Compact Server node is an OPC UA server with a programmable address space to build your own information model.
   The address space is to expand with JS source code based on node-opcua API and OPC UA specification.</p>
@@ -46,7 +46,7 @@
 </script>
 
 <script type="text/javascript">
-  RED.nodes.registerType("opcua-compact-server", {
+  RED.nodes.registerType("opcua-compact-server-refresh", {
     category: "opcua",
     color: "#20B2aa",
     defaults: {
@@ -169,7 +169,7 @@
     align: "right",
     icon: "icon.png",
     label: function() {
-      return this.name || "Compact-Server";
+      return this.name || "Compact-Server-Refresh";
     },
     labelStyle: function() {
       return this.name ? "node_label_italic" : "";
